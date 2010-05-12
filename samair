@@ -1,0 +1,89 @@
+#!/usr/bin/perl
+
+use LWP::UserAgent;
+use Getopt::Long;
+
+my %options = ();
+GetOptions(\%options, "w=s");
+
+print q {
+================================================================================
+
+# title:         Samair.ru http proxies parser and tester
+# developer:     code91
+# e-mail:        < code[at]insicuri[dot]net >  
+
+Usage: perl samair {options} 
+
+Options: -w [path] write results on a file.   
+
+================================================================================
+};
+	
+my $samair = "http://www.samair.ru/proxy/time-01.htm";
+my $myip   = "http://www.azpoint.net/Script_vari/indirizzoIP.asp";
+
+my $ua = LWP::UserAgent->new();
+
+print "[+] Retrieving local ip...  ";
+my $response = $ua->get( $myip );
+my $my_ip = parse_ips( $response->content ) or die "[-] Unable to retrieve real IP from azpoint.net\n";
+print "$my_ip\n";
+
+print "[+] Getting proxy list from samair.ru...\n";	    
+my $resp = $ua->get( $samair );
+my $res = $resp->content();
+
+my( $proxy, @proxies );
+while( $res =~ m/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g ) 
+{ 
+	$proxy = $1;
+        push( @proxies, $proxy ); 
+}
+
+print "[+] Testing $#proxies proxies...\n";	
+foreach my $parsed_proxy( @proxies ) 
+{ 
+	$ua->proxy( 'http', "http://$parsed_proxy/" );              
+        my $resp2 = $ua->get( $myip );
+        my $proxy_ip = parse_ips( $resp2->content() ); 
+        
+	my @parsed_proxy;                     
+        if( $resp2->is_success ) 
+	{ 
+		if ( $proxy_ip == $my_ip ) 
+		{ 
+			print "\t - $proxy_ip is a transparent proxy\n";
+		}
+                elsif ( $proxy_ip != $my_ip ) 
+		{ 
+			print "\t - $proxy_ip is an anonymous proxy\n";
+                        push( @parsed_proxies, $proxy_ip ); 
+		}
+	}
+}
+
+if( $options{"w"} ) 
+{
+	print "[+] Writing results in $options{'w'}...\n";    
+	open(FILE, ">", $options{'w'}) or die ("[-] Unable to open file in <$options{'w'}> path.\n");
+	print FILE "@parsed_proxies";   
+	close( FILE ); 
+}                                                                                                                            
+                              
+sub parse_ips( $ ) 
+{
+	my $ip = '';              
+	my @content = split('\n', shift);               
+	foreach my $line( @content )
+	{                    
+		if( $line =~ /(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/ ) 
+		{
+			$ip = $1;
+                        last; 
+		}
+	}           
+        return $ip; 
+}
+         
+

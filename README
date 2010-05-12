@@ -1,0 +1,18 @@
+
+Developer: code <at> insicuri <dot> net
+
+Description:
+Samair.ru http proxies parser and tester.
+This tool retrieves fresh proxies exploiting the samair.ru database.
+It finds transparents and anonymous proxies.
+
+Installation:
+The tool required some modules.
+To resolve module dependences, simply type in your terminal:
+cpan
+install Getopt::Long
+install LWP::UserAgent
+quit
+
+After that you are able to run the tool typing:
+perl samair
